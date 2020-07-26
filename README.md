@@ -1,0 +1,2 @@
+[![Maintainability](https://api.codeclimate.com/v1/badges/c42c04985953eca93933/maintainability)](https://codeclimate.com/github/eg-b/python-project-lvl3/maintainability)
+<a href="https://codeclimate.com/github/eg-b/python-project-lvl3/test_coverage"><img src="https://api.codeclimate.com/v1/badges/c42c04985953eca93933/test_coverage" /></a>

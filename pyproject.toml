@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "eg-b_page_loader"
+version = "0.1.0"
+description = "page-loader"
+authors = ["eg-b <yeg.baranov@gmail.com>"]
+packages = [
+    { include = "page_loader" },
+  ]
+repository = "https://github.com/eg-b/python-project-lvl3.git"
+classifiers = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Operating System :: POSIX',
+        'Programming Language :: Python'
+    ]
+
+[[tool.poetry.source]]
+name= "testpypi"
+url= "https://test.pypi.org/legacy/"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+requests = "^2.24.0"
+pytest-cov = "^2.10.0"
+[tool.poetry.dev-dependencies]
+flake8 = "^3.7.9"
+pytest = "^5.4.1"
+
+[tool.poetry.scripts]
+page-loader = "page_loader.scripts.page_loader:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
