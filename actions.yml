@@ -32,16 +32,14 @@ jobs:
       run: pip install poetry
       run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
       run: chmod +x ./cc-test-reporter
-    
+
     # Runs a single command using the runners shell
     - name: install and test
       run: make configure
       run: ./cc-test-reporter before-build
       run: make lint
       run: make test
-    
+
     - name: teardown
       run: ./cc-test-reporter after-build --exit-code $TEST_RESULT
       run: if [[ "$TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage;
-    
-      
