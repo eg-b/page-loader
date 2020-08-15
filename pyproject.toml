@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eg-b_page_loader"
-version = "0.1.0"
+version = "0.1.1"
 description = "page-loader"
 authors = ["eg-b <yeg.baranov@gmail.com>"]
 packages = [
@@ -23,6 +23,7 @@ url= "https://test.pypi.org/legacy/"
 python = "^3.6"
 requests = "^2.24.0"
 pytest-cov = "^2.10.0"
+beautifulsoup4 = "^4.9.1"
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7.9"
 pytest = "^5.4.1"
