@@ -10,51 +10,65 @@ CURRENT_DIR = os.getcwd()
 PAGE = 'page'
 PAGE_ELEMENT = 'page_item'
 DIR = 'dir'
+LOCAL_LINK = 'local_link'
+
 URL = 'https://hexlet.io/courses'
 
+
+# ДОПИСАТЬ ТЕСТЫ ПО ЗАМЕНЕ ЭЛЕМЕНТОВ НА СТРАНИЦЕ
 
 def page_load(url, path=CURRENT_DIR):
     url_parts = urlparse(url, scheme='http')
     scheme = f"{url_parts.scheme}://"
     address = f"{url_parts.netloc}{url_parts.path}"
     url = f"{scheme}{address}"
-    name = get_name(url, type=DIR)
-    storage_path = f"{path}/{name}"
+    storage_path = f"{path}/{get_name(url, type=DIR)}"
     if os.path.exists(storage_path):
         shutil.rmtree(storage_path)
     os.makedirs(storage_path)
-    res = download(url=f"{scheme}{address}", path=path)
-    get_resources(content=res.content,
-                  path=storage_path)
+    page = download(url=f"{scheme}{address}", path=path)
+    get_resources(source=page, path=storage_path)
 
 
 def download(url, path=CURRENT_DIR, type=PAGE):
     save_path = f"{os.path.abspath(path)}"
     res = requests.get(url)
-    name = get_name(url, type)
-    with open(f"{save_path}/{name}", "w") as page_file:
-        page_file.write(res.text)
-    return res
+    name = f"{save_path}/{get_name(url, type)}"
+    with open(name, "w") as file:
+        file.write(res.text)
+    return name
 
 
-def get_resources(content, path):
-    page = BeautifulSoup(content, 'html.parser')
-    for tag in ['link', 'script', 'img']:
-        for item in page.find_all(tag):
-            resource = item.get('src')
-            if resource:
-                download(resource, path, type=PAGE_ELEMENT)
+def get_resources(source, path):
+    with open(source) as file:
+        soup = BeautifulSoup(file, 'html.parser')
+        for t in ['link', 'script', 'img']:
+            for tag in soup.find_all(t):
+                resource = tag.get('src')
+                if resource:
+                    link = download(resource, path, type=PAGE_ELEMENT)
+                    _, file = link.split(f'{path}/')
+                    tag['src'] = f"{path}/{get_name(file, type=LOCAL_LINK)}"
+    html = soup.prettify(soup.original_encoding)
+    with open(source, 'w') as file:
+        file.write(html)
 
 
-def get_name(url, type):
-    item, ext = os.path.splitext(url)
-    schema, item_ = item.split('//')
-    item_ = item_[:-1] if item_.endswith('/') else item_
-    item_ = ''.join(['-' if i in string.punctuation else i for i in item_])
-    if type == DIR:
-        return f"{item_}_files"
-    elif type == PAGE:
-        return f"{item_}.html"
-    elif type == PAGE_ELEMENT:
-        name = ''.join(['-' if i in string.punctuation else i for i in item_])
-        return f'{name}{ext}' if ext else f'{name}'
+def get_name(item, type):
+    name, ext = os.path.splitext(item)
+    if type == LOCAL_LINK:
+        name = ''.join(['-' if i in string.punctuation else i for i in name])
+        return f'{name}{ext}'
+    else:
+        url = name
+        schema, url = url.split('//')
+        url = url[:-1] if url.endswith('/') else url
+        url = ''.join(['-' if i in string.punctuation else i for i in url])
+        if type == DIR:
+            return f"{url}_files"
+        elif type == PAGE:
+            return f"{url}.html"
+        elif type == PAGE_ELEMENT:
+            name = ''.join(['-' if i in string.punctuation
+                            else i for i in url])
+            return f'{name}{ext}' if ext else f'{name}'

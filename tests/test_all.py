@@ -3,6 +3,7 @@ from tests import input_data
 import pytest
 import os
 import tempfile
+from bs4 import BeautifulSoup
 
 
 URL = 'https://hexlet.io/courses'
@@ -11,7 +12,6 @@ URL = 'https://hexlet.io/courses'
 def test_download(tmpdir_):
     res = download(URL, tmpdir_)
     dir_files = os.listdir(tmpdir_)
-    assert res.status_code == 200
     assert 'hexlet-io-courses.html' in dir_files
 
 
@@ -33,11 +33,19 @@ def test_different_ways_written_url(tmpdir_, url, exp_name):
 
 def test_rewrite_links(tmpdir_):
     page_load(URL, tmpdir_)
-    resources = os.listdir(f'{tmpdir_}/hexlet-io-courses_files')
-    with open(f'{tmpdir_}/hexlet-io-courses.html') as page:
-        soup = BeautifulSoup(content, 'html.parser')
-        for item in resources:
-            assert item in soup
+    files_folder = f'{tmpdir_}/hexlet-io-courses_files'
+    resources = os.listdir(files_folder)
+    resources_links = [f"{files_folder}/{item}" for item in resources]
+    html_links = []
+    with open(f'{tmpdir_}/hexlet-io-courses.html') as file:
+        soup = BeautifulSoup(file, 'html.parser')
+        for t in ['link', 'script', 'img']:
+            for tag in soup.find_all(t):
+                link = tag.get('src')
+                if link:
+                    html_links.append(link)
+    assert sorted(html_links) == sorted(resources_links)
+
 
 
 @pytest.fixture()
