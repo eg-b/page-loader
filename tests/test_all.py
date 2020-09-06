@@ -10,7 +10,7 @@ URL = 'https://hexlet.io/courses'
 
 
 def test_download(tmpdir_):
-    res = download(URL, tmpdir_)
+    download(URL, tmpdir_)
     dir_files = os.listdir(tmpdir_)
     assert 'hexlet-io-courses.html' in dir_files
 
@@ -47,9 +47,8 @@ def test_rewrite_links(tmpdir_):
     assert sorted(html_links) == sorted(resources_links)
 
 
-
 @pytest.fixture()
 def tmpdir_():
     path = os.path.abspath("./")
-    with tempfile.TemporaryDirectory(dir=path) as fp:
-        yield fp
+    with tempfile.TemporaryDirectory(dir=path) as dir_:
+        yield dir_

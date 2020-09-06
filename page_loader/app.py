@@ -1,5 +1,6 @@
-import requests
+import logging
 import os
+import requests
 import string
 import shutil
 from urllib.parse import urlparse
@@ -12,21 +13,23 @@ PAGE_ELEMENT = 'page_item'
 DIR = 'dir'
 LOCAL_LINK = 'local_link'
 
-URL = 'https://hexlet.io/courses'
-
-
-# ДОПИСАТЬ ТЕСТЫ ПО ЗАМЕНЕ ЭЛЕМЕНТОВ НА СТРАНИЦЕ
 
 def page_load(url, path=CURRENT_DIR):
     url_parts = urlparse(url, scheme='http')
     scheme = f"{url_parts.scheme}://"
     address = f"{url_parts.netloc}{url_parts.path}"
     url = f"{scheme}{address}"
+    logging.debug(f"normalize url to {url}")
     storage_path = f"{path}/{get_name(url, type=DIR)}"
     if os.path.exists(storage_path):
+        logging.warning(f"directory {storage_path} already exist")
+        logging.warning("clear to create a new one")
         shutil.rmtree(storage_path)
+    logging.info(f"creating directory {storage_path}")
     os.makedirs(storage_path)
+    logging.info(f"downloading the page {url}")
     page = download(url=f"{scheme}{address}", path=path)
+    logging.info(f"downloading page elements from {url}")
     get_resources(source=page, path=storage_path)
 
 
@@ -34,6 +37,7 @@ def download(url, path=CURRENT_DIR, type=PAGE):
     save_path = f"{os.path.abspath(path)}"
     res = requests.get(url)
     name = f"{save_path}/{get_name(url, type)}"
+    logging.debug(f"writing downloaded item as {name}")
     with open(name, "w") as file:
         file.write(res.text)
     return name
@@ -46,11 +50,15 @@ def get_resources(source, path):
             for tag in soup.find_all(t):
                 resource = tag.get('src')
                 if resource:
+                    logging.debug(f"downloading {resource} to {path}")
                     link = download(resource, path, type=PAGE_ELEMENT)
                     _, file = link.split(f'{path}/')
                     tag['src'] = f"{path}/{get_name(file, type=LOCAL_LINK)}"
+                    logging.debug(f"link {resource} in page file has been "
+                                  f"changed to {tag['src']}")
     html = soup.prettify(soup.original_encoding)
     with open(source, 'w') as file:
+        logging.debug("rewriting page file with local links")
         file.write(html)
 
 
