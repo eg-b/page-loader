@@ -3,10 +3,18 @@ from tests import input_data
 import pytest
 import os
 import tempfile
+import subprocess
 from bs4 import BeautifulSoup
 
 
 URL = 'https://hexlet.io/courses'
+
+
+@pytest.fixture()
+def tmpdir_():
+    path = os.path.abspath("./")
+    with tempfile.TemporaryDirectory(dir=path) as dir_:
+        yield dir_
 
 
 def test_download(tmpdir_):
@@ -25,7 +33,7 @@ def test_resource_dir_creating(tmpdir_):
                          input_data.urls_and_exp_names,
                          ids=input_data.urls_and_exp_names_ids)
 def test_different_ways_written_url(tmpdir_, url, exp_name):
-    page_load(url=url, path=tmpdir_)
+    page_load(url, tmpdir_)
     dir_files = os.listdir(tmpdir_)
     assert dir_files != []
     assert exp_name in dir_files
@@ -47,8 +55,12 @@ def test_rewrite_links(tmpdir_):
     assert sorted(html_links) == sorted(resources_links)
 
 
-@pytest.fixture()
-def tmpdir_():
-    path = os.path.abspath("./")
-    with tempfile.TemporaryDirectory(dir=path) as dir_:
-        yield dir_
+def test_connection_error(tmpdir_):
+    with pytest.raises(SystemExit):
+        page_load('https://hexqwert.io/courses', tmpdir_)
+
+
+def test_read_only_directory(tmpdir_):
+    subprocess.call(['chmod', '0444', tmpdir_])
+    with pytest.raises(SystemExit):
+        page_load(URL, tmpdir_)
