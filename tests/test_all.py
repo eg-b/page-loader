@@ -1,10 +1,12 @@
-from page_loader.app import download, page_load
-from tests import input_data
-import pytest
 import os
-import tempfile
 import subprocess
+import tempfile
+
+import pytest
 from bs4 import BeautifulSoup
+
+from page_loader.app import KnownError, download, page_load
+from tests import input_data
 
 
 URL = 'https://hexlet.io/courses'
@@ -56,11 +58,11 @@ def test_rewrite_links(tmpdir_):
 
 
 def test_connection_error(tmpdir_):
-    with pytest.raises(SystemExit):
+    with pytest.raises(KnownError):
         page_load('https://hexqwert.io/courses', tmpdir_)
 
 
-def test_read_only_directory(tmpdir_):
+def test_no_permission_dir(tmpdir_):
     subprocess.call(['chmod', '0444', tmpdir_])
-    with pytest.raises(SystemExit):
+    with pytest.raises(KnownError):
         page_load(URL, tmpdir_)

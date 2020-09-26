@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-from page_loader.cli import parser
-from page_loader.app import page_load
-import logging
 import sys
+
+from page_loader.app import KnownError, page_load
+from page_loader.cli import parser
+from page_loader.log import fh, logger
 
 
 def main():
     args = parser.parse_args()
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-                        level=getattr(logging, args.log.upper()))
-    logging.info('started')
-    page_load(args.url, args.output)
-    logging.info('finished')
+    fh.setLevel(args.log.upper())
+    logger.info('started')
+    try:
+        page_load(args.url, args.output)
+    except KnownError:
+        sys.exit(1)
+    logger.info('finished')
+    print('Success')
     sys.exit(0)
 
 
