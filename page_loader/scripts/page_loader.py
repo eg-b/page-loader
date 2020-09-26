@@ -8,7 +8,7 @@ from page_loader.log import fh, logger
 
 def main():
     args = parser.parse_args()
-    fh.setLevel(args.log.upper())
+    fh.setLevel(args.lvl.upper())
     logger.info('started')
     try:
         page_load(args.url, args.output)
