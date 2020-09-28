@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from progress.bar import Bar
 
 from page_loader.log import logger
 
@@ -18,6 +19,9 @@ LOCAL_LINK = 'local_link'
 
 class KnownError(Exception):
     pass
+
+
+bar = Bar('Processing', max=5, suffix='%(percent)d%%')
 
 
 def page_load(url, dir_path=CURRENT_DIR):
@@ -47,8 +51,11 @@ def page_load(url, dir_path=CURRENT_DIR):
         raise KnownError() from e
     logger.info(f"downloading page {url}")
     page = download(url=f"{scheme}{address}", path=dir_path)
+    bar.next()
     logger.info(f"downloading page elements from {url}")
     get_resources(source=page, path=storage_path)
+    bar.next()
+    bar.finish()
 
 
 def download(url, path=CURRENT_DIR, type=PAGE):
@@ -75,20 +82,21 @@ def download(url, path=CURRENT_DIR, type=PAGE):
         file.write(res.text)
     return name
 
-
 def get_resources(source, path):
     with open(source) as file:
         soup = BeautifulSoup(file, 'html.parser')
-        for t in ['link', 'script', 'img']:
-            for tag in soup.find_all(t):
-                resource = tag.get('src')
+
+        for tag in ['link', 'script', 'img']:
+            for item in soup.find_all(tag):
+                resource = item.get('src')
                 if resource:
                     logger.debug(f'downloading "{resource}" to "{path}"')
                     link = download(resource, path, type=PAGE_ELEMENT)
                     _, file = link.split(f'{path}/')
-                    tag['src'] = f'{path}/{get_name(file, type=LOCAL_LINK)}'
+                    item['src'] = f'{path}/{get_name(file, type=LOCAL_LINK)}'
                     logger.debug(f'link "{resource}" in page file has been '
-                                 f'changed to "{tag["src"]}"')
+                                 f'changed to "{item["src"]}"')
+            bar.next()
     html = soup.prettify(soup.original_encoding)
     with open(source, 'w') as file:
         logger.info("rewriting page file with local links")
