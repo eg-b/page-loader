@@ -10,6 +10,7 @@ from tests import input_data
 
 
 URL = 'https://hexlet.io/courses'
+URL2 = "https://ru.wikipedia.org/wiki/Ubuntu"
 
 
 @pytest.fixture()
@@ -66,3 +67,7 @@ def test_no_permission_dir(tmpdir_):
     subprocess.call(['chmod', '0444', tmpdir_])
     with pytest.raises(KnownError):
         page_load(URL, tmpdir_)
+
+def test_mint(tmpdir_):
+    page_load(URL2, tmpdir_)
+    assert True

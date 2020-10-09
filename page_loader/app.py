@@ -30,7 +30,7 @@ def page_load(url, dir_path=CURRENT_DIR):
                        "the current directory will be used")
     if dir_path.endswith('/'):
         dir_path = dir_path[:-1]
-    url_parts = urlparse(url, scheme='http')
+    url_parts = urlparse(url, scheme='https')
     scheme = f"{url_parts.scheme}://"
     address = f"{url_parts.netloc}{url_parts.path}"
     url = f"{scheme}{address}"
@@ -53,7 +53,7 @@ def page_load(url, dir_path=CURRENT_DIR):
     page = download(url=f"{scheme}{address}", path=dir_path)
     bar.next()
     logger.info(f"downloading page elements from {url}")
-    get_resources(source=page, path=storage_path)
+    get_resources(source=page, domain=url_parts.netloc, path=storage_path)
     bar.next()
     bar.finish()
 
@@ -79,23 +79,32 @@ def download(url, path=CURRENT_DIR, type=PAGE):
         logger.warning("File already exists and will be overwritten")
     logger.debug(f"Writing downloaded item as {name}")
     with open(name, "w") as file:
-        file.write(res.text)
+        try:
+            file.write(res.text)
+        except OSError:
+            logger.warning("file name is too long, "
+                           "it will be shortened due to OS restrictions")
+
     return name
 
-def get_resources(source, path):
+def get_resources(source, domain, path):
     with open(source) as file:
         soup = BeautifulSoup(file, 'html.parser')
-
         for tag in ['link', 'script', 'img']:
             for item in soup.find_all(tag):
-                resource = item.get('src')
+                if tag == 'link':
+                    resource = item.get('href')
+                elif tag in ['script', 'img']:
+                    resource = item.get('src')
                 if resource:
-                    logger.debug(f'downloading "{resource}" to "{path}"')
-                    link = download(resource, path, type=PAGE_ELEMENT)
-                    _, file = link.split(f'{path}/')
-                    item['src'] = f'{path}/{get_name(file, type=LOCAL_LINK)}'
-                    logger.debug(f'link "{resource}" in page file has been '
-                                 f'changed to "{item["src"]}"')
+                    if domain not in resource and not '//' in resource:
+                        logger.debug(f'downloading "{resource}" to "{path}"')
+                        link = download(f"https://{domain}{resource}", path, type=PAGE_ELEMENT)
+                        _, file = link.split(f'{path}/')
+                        item['src'] = f'{path}/{get_name(file, type=LOCAL_LINK)}'
+                        logger.debug(f'link in page file has been '
+                                     f'changed from "{resource}" '
+                                     f'to "{item["src"]}"')
             bar.next()
     html = soup.prettify(soup.original_encoding)
     with open(source, 'w') as file:
@@ -109,8 +118,7 @@ def get_name(item, type):
         name = ''.join(['-' if i in string.punctuation else i for i in name])
         return f'{name}{ext}'
     else:
-        url = name
-        schema, url = url.split('//')
+        schema, url = name.split('//')
         url = url[:-1] if url.endswith('/') else url
         url = ''.join(['-' if i in string.punctuation else i for i in url])
         if type == DIR:
@@ -120,4 +128,13 @@ def get_name(item, type):
         elif type == PAGE_ELEMENT:
             name = ''.join(['-' if i in string.punctuation
                             else i for i in url])
-            return f'{name}{ext}' if ext else f'{name}'
+            if ext:
+                if len(f'{name}{ext}') > 255:
+                    while len(f'{name}{ext}') > 255:
+                        name = name[:-1]
+                name = f'{name[:len(ext)]}{ext}'
+            else:
+                if len(name) > 255:
+                    while len(name) > 255:
+                        name = name[:-1]
+            return name
