@@ -5,7 +5,7 @@ import tempfile
 import pytest
 from bs4 import BeautifulSoup
 
-from page_loader.app import KnownError, download, page_load
+from page_loader.app import KnownError, fetch_item, page_load
 from tests import input_data
 
 
@@ -21,7 +21,7 @@ def tmpdir_():
 
 
 def test_download(tmpdir_):
-    download(URL, tmpdir_)
+    fetch_item(URL, tmpdir_)
     dir_files = os.listdir(tmpdir_)
     assert 'hexlet-io-courses.html' in dir_files
 
