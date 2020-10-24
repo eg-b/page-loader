@@ -46,8 +46,10 @@ def page_load(url, dir_path=CURRENT_DIR):
         except PermissionError:
             logger.error("You don't have enough privileges. "
                          "Check permissions or try another one.")
+            raise KnownError() from e
         except OSError as e:
             logger.error(e)
+            raise KnownError() from e
     else:
         logger.warning(f"directory {files_storage_path} already exists."
                        f" Files will be rewritten")
