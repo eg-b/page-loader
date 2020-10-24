@@ -30,7 +30,7 @@ $ python3 -m pip install --user -i https://test.pypi.org/simple/ --extra-index-u
 
 
 ### Page download
-[![asciicast](https://asciinema.org/a/F1C213M7KZnEE3vx4F6d2QWYU.svg)](https://asciinema.org/a/F1C213M7KZnEE3vx4F6d2QWYU)
+[![asciicast](https://asciinema.org/a/yUpXwX5PLDA8oLY950Zyd1nkx.svg)](https://asciinema.org/a/yUpXwX5PLDA8oLY950Zyd1nkx)
 
 ### Page download errors
 [![asciicast](https://asciinema.org/a/Le1AYL0fafNAW6P8rw9IRkVqo.svg)](https://asciinema.org/a/Le1AYL0fafNAW6P8rw9IRkVqo)
