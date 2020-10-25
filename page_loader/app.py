@@ -43,7 +43,7 @@ def page_load(url, dir_path=CURRENT_DIR):
         logger.info(f"creating directory {files_storage_path}")
         try:
             os.makedirs(files_storage_path)
-        except PermissionError:
+        except PermissionError as e:
             logger.error("You don't have enough privileges. "
                          "Check permissions or try another one.")
             raise KnownError() from e
