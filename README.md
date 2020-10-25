@@ -1,4 +1,4 @@
-![badge](https://action-badges.now.sh/eg-b/python-project-lvl3)
+![Python application](https://github.com/eg-b/python-project-lvl3/workflows/Python%20application/badge.svg)
 [![Maintainability](https://api.codeclimate.com/v1/badges/c42c04985953eca93933/maintainability)](https://codeclimate.com/github/eg-b/python-project-lvl3/maintainability)
 <a href="https://codeclimate.com/github/eg-b/python-project-lvl3/test_coverage"><img src="https://api.codeclimate.com/v1/badges/c42c04985953eca93933/test_coverage" /></a>
 
