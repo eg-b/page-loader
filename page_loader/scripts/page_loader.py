@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 import sys
+import logging
 
+from page_loader import logging as log
 from page_loader.app import KnownError, page_load
-from page_loader.cli import parser
-from page_loader.log import fh, logger
+from page_loader import cli
 
 
 def main():
-    args = parser.parse_args()
-    fh.setLevel(args.lvl.upper())
-    logger.info('started')
+    args = cli.parser.parse_args()
+    log.setup(level=args.level, log_file=args.file)
+    logging.info('started')
     try:
         page_load(args.url, args.output)
-    except KnownError:
+    except KnownError as e:
+        logging.debug(e, exc_info=sys.exc_info())
+        logging.error(e)
         sys.exit(1)
-    logger.info('finished')
-    print('Success')
-    sys.exit(0)
+    logging.info('finished')
 
 
 if __name__ == "__main__":
