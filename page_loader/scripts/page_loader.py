@@ -2,14 +2,18 @@
 import sys
 import logging
 
-from page_loader import logging as log
+from page_loader import logging as logging_
 from page_loader.app import KnownError, page_load
 from page_loader import cli
 
 
 def main():
-    args = cli.parser.parse_args()
-    log.setup(level=args.level, log_file=args.file)
+    try:
+        args = cli.parser.parse_args()
+    except KnownError as e:
+        logging.error(e)
+        sys.exit(1)
+    logging_.setup(level=args.level, log_file=args.file)
     logging.info('started')
     try:
         page_load(args.url, args.output, args.force)
