@@ -16,7 +16,7 @@ def main():
     logging_.setup(level=args.level, log_file=args.file)
     logging.info('started')
     try:
-        page_load(args.url, args.output, args.force)
+        page_load(url=args.url, dir_path=args.output, force=args.force)
     except KnownError as e:
         logging.debug(e, exc_info=sys.exc_info())
         logging.error(e)

@@ -1,33 +1,49 @@
-urls_and_exp_names = [
-    ('https://www.hexlet.io/courses', 'www-hexlet-io-courses.html'),
-    ('https://hexlet.io/courses', 'hexlet-io-courses.html'),
-    ('www.hexlet.io/courses', 'www-hexlet-io-courses.html'),
-    ('hexlet.io/courses', 'hexlet-io-courses.html')]
+from page_loader import app
+import os
 
 
-urls_and_exp_names_ids = [
-    'scheme + www.hostname + path',
-    'scheme + hostname + path',
-    'www.hostname + path',
-    'hostname + path']
+max_len = os.pathconf('/', 'PC_NAME_MAX')
 
-urls_with_errors = ["https://httpbin.org/status/400",
-                    "https://httpbin.org/status/401",
-                    "https://httpbin.org/status/403",
-                    "https://httpbin.org/status/404",
-                    "https://httpbin.org/status/500"]
-urls_with_errors_ids = ["bad request", "unaгthorized", "no privileges",
-                        "not found", "server error"]
+max_len_link = 'http://test/script'.ljust(max_len + 7, '0') + '.ext'
+max_len_expected_name = 'test-script'.ljust(max_len - 4, '0') + '.ext'
 
 
-exp_res_links = [
-    'git-scm-com-assets-application-84db8b4799905f9f7cc62292e1a97e206056e49208'
-    '8736595af9c2fe3ee50c4b.js',
-    'git-scm-com-assets-application-eff32599493b6e95c849e51818aa17b0f2d75fa2fc'
-    '7688c8e72b99a197345920.css',
-    'git-scm-com-assets-modernize-91eb7473bfa18e104376c623be884766692c7cf93c876'
-    '9aea544ad57e3ea2292.js',
-    'git-scm-com-book-en-v2-images-git-osx-installer.png',
-    'git-scm-com-favicon.ico',
-    'git-scm-com-images-logo-2x.png'
-    ]
+NAMES = [
+    ('http://test.io/courses', app.PAGE, 'test-io-courses.html'),
+    ('http://test.io/assets/test.css', app.PAGE_ELEMENT,
+     'test-io-assets-test.css'),
+    ('http://test.io', app.DIR, 'test-io_files'),
+    (max_len_link, app.PAGE_ELEMENT, max_len_expected_name)
+]
+
+
+PAGE_ELEMENTS = [
+    ('https://eg-b.github.io/python-project-lvl3/assets/application.css',
+     'eg-b-github-io-python-project-lvl3-assets-application.css'),
+    ('https://eg-b.github.io/python-project-lvl3/courses/hexlet',
+     'eg-b-github-io-python-project-lvl3-courses-hexlet'),
+    ('https://eg-b.github.io/python-project-lvl3/assets/professions'
+     '/python.svg',
+     'eg-b-github-io-python-project-lvl3-assets-professions-python.svg'),
+    ('https://eg-b.github.io/python-project-lvl3/packs/js/runtime.js',
+     'eg-b-github-io-python-project-lvl3-packs-js-runtime.js')]
+
+
+PAGE_ELEMENTS_WITH_CODES = [
+    ('https://eg-b.github.io/python-project-lvl3/assets/application.css', 404),
+    ('https://eg-b.github.io/python-project-lvl3/courses/hexlet', 200),
+    ('https://eg-b.github.io/python-project-lvl3/assets/professions'
+     '/python.svg', 500),
+    ('https://eg-b.github.io/python-project-lvl3/packs/js/runtime.js', 200)]
+
+
+URLS_AND_EXP_NAMES = [
+    ('https://eg-b.github.io/python-project-lvl3',
+     'eg-b-github-io-python-project-lvl3.html'),
+    ('eg-b.github.io/python-project-lvl3',
+     'eg-b-github-io-python-project-lvl3.html')]
+
+
+ERROR_CODES = ["400", "401", "403", "404", "500"]
+ERROR_CODES_IDS = ["bad request", "unathorized", "no privileges",
+                   "not found", "server error"]
