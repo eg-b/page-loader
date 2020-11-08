@@ -52,7 +52,7 @@ def test_names_match_after_truncation(tmpdir_):
 
 
 def test_prepare_page_elements(tmpdir_):
-    html = os.path.abspath("../docs/index.html")
+    html = os.path.abspath("docs/index.html")
     with open(html, 'r') as file:
         page, items = app.prepare_resources(
             source=file, domain="eg-b.github.io",
