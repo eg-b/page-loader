@@ -36,7 +36,7 @@ def page_load(url, dir_path=None, force=False):
     domain = url_parts.netloc
     url = f"{scheme}{url_parts.netloc}{url_parts.path}"
     logging.info(f"downloading page {url}")
-    page = download_content(url)
+    original_page = download_content(url)
     page_file = get_name(url, type=PAGE)
     page_file = f"{dir_path}/{page_file}"
     files_dir = get_name(url, type=DIR)
@@ -57,9 +57,9 @@ def page_load(url, dir_path=None, force=False):
         else:
             raise KnownError(f"Directory {files_dir} already exists, "
                              f"clear the old one or try to use '-f' option")
-    html, page_items = prepare_resources(source=page, domain=domain,
+    new_page, page_items = prepare_resources(source=page, domain=domain,
                                          files_path=files_dir)
-    write_to_file(file_path=page_file, source=html)
+    write_to_file(file_path=page_file, source=new_page)
     max_bar = 1 if len(page_items) == 0 else len(page_items)
     bar = setup_bar(max=max_bar)
     logging.info(f"downloading page elements from {url}")
