@@ -30,8 +30,7 @@ def page_load(url, dir_path=None, force=False):
         logging.warning("No path specified, "
                         "the current directory will be used")
         dir_path = os.getcwd()
-    if dir_path.endswith('/'):
-        dir_path = dir_path[:-1]
+    dir_path = dir_path.rstrip('/')
     url_parts = urlparse(url, scheme='https')
     scheme = f"{url_parts.scheme}://"
     domain = url_parts.netloc
@@ -98,7 +97,7 @@ def prepare_resources(source, domain, files_path):
                 element = (link, file_name)
                 page_items.append(element)
                 item['src'] = f"{files_path}/{file_name}"
-    logging.debug(f"elements: {page_items}")
+    logging.debug(f"return elements: {page_items}")
     page = soup.prettify(soup.original_encoding)
     return page, page_items
 
@@ -138,7 +137,7 @@ def get_name(item, type, dir=None):
                 name_with_ext = f"{new_name}{mark}{ext}"
                 counter += 1
         result = name_with_ext
-    logging.debug(f"return {result}")
+    logging.debug(f"return new name {result}")
     return result
 
 
@@ -157,6 +156,7 @@ def download_content(url):
         raise KnownError(f"Request error while trying "
                          f"to download {url}. "
                          f"Check if the request is correct.") from e
+    logging.debug("successfully loaded")
     if 'text' in res.headers['Content-Type']:
         return res.text
     else:

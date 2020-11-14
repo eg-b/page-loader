@@ -46,8 +46,8 @@ def test_names_match_after_truncation(tmpdir_):
     new_name = app.get_name(item=params.max_len_link,
                             type=app.PAGE_ELEMENT,
                             dir=tmpdir_)
-    assert new_name != name, "names must not match"
     new_name, ext = os.path.splitext(new_name)
+    assert new_name != name, "names must not match"
     assert new_name.endswith('_1'), "incorrect new name"
 
 
@@ -62,7 +62,38 @@ def test_prepare_page_elements(tmpdir_):
         for i in items:
             link, name = i
             assert f"{tmpdir_}/{name}" in page, \
-                "the page should have such a link"
+                "new link was not found on the page"
+
+
+@pytest.mark.parametrize('status_code', params.ERROR_CODES,
+                         ids=params.ERROR_CODES_IDS)
+def test_http_error_handling(mock, status_code):
+    mock.get(TEST_URL, text='data', status_code=status_code)
+    with pytest.raises(KnownError):
+        app.download_content(input)
+
+
+def test_write_file(tmpdir_):
+    page = "page.html"
+    with open(f"{tmpdir_}/{page}", 'w') as pg:
+        pg.write("test")
+    assert page in os.listdir(tmpdir_)
+
+
+def test_no_permission_dir(tmpdir_):
+    subprocess.call(['chmod', '0444', tmpdir_])
+    with pytest.raises(KnownError):
+        app.write_to_file(f"{tmpdir_}/test", tmpdir_)
+
+
+def test_page_load(tmpdir_, mock):
+    URL = 'http://test.io/test'
+    mock.get(URL, text='data', headers={'Content-Type': 'text'})
+    files_dir = "test-io-test_files"
+    page_load(URL, dir_path=tmpdir_, force=True)
+    tmpdir_files = os.listdir(tmpdir_)
+    assert 'test-io-test.html' in tmpdir_files, "unexpected name"
+    assert files_dir in tmpdir_files, "there is no _files directory"
 
 
 @pytest.mark.parametrize('url,exp_name',
@@ -74,14 +105,6 @@ def test_different_ways_written_url(tmpdir_, url, exp_name):
     dir_files = os.listdir(tmpdir_)
     assert dir_files != [], "there is no page"
     assert exp_name in dir_files, "unexpected name"
-
-
-@pytest.mark.parametrize('status_code', params.ERROR_CODES,
-                         ids=params.ERROR_CODES_IDS)
-def test_http_error_handling(mock, status_code):
-    mock.get(TEST_URL, text='data', status_code=status_code)
-    with pytest.raises(KnownError):
-        app.download_content(input)
 
 
 def test_item_load_fail(mock, tmpdir_):
@@ -97,19 +120,3 @@ def test_item_load_fail(mock, tmpdir_):
     files_dir_name = f"{exp_name}_files"
     assert files_dir_name in dir
     assert len(os.listdir(f"{tmpdir_}/{files_dir_name}")) == 2
-
-
-def test_no_permission_dir(tmpdir_):
-    subprocess.call(['chmod', '0444', tmpdir_])
-    with pytest.raises(KnownError):
-        page_load(GH_URL, tmpdir_)
-
-
-def test_page_load(tmpdir_, mock):
-    URL = 'http://test.io/test'
-    mock.get(URL, text='data', headers={'Content-Type': 'text'})
-    files_dir = "test-io-test_files"
-    page_load(URL, dir_path=tmpdir_, force=True)
-    tmpdir_files = os.listdir(tmpdir_)
-    assert 'test-io-test.html' in tmpdir_files, "unexpected name"
-    assert files_dir in tmpdir_files, "there is no _files directory"

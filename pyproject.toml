@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eg-b_page_loader"
-version = "0.1.10"
+version = "0.1.11"
 description = "page-loader"
 authors = ["eg-b <yeg.baranov@gmail.com>"]
 packages = [

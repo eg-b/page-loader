@@ -12,6 +12,6 @@ parser.add_argument('url', help='web address')
 parser.add_argument('--log=', metavar='LEVEL', dest='level',
                     default=logging.INFO,
                     help='logging level: debug, warning, info, error',
-                    type=logging.get_param)
+                    type=logging.get_log_verbosity)
 parser.add_argument('--file=', dest='file', metavar='LOG_FILE',
                     default=None, help='log file name')

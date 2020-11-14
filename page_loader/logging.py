@@ -34,7 +34,7 @@ def setup(level, log_file):
                         handlers=handlers)
 
 
-def get_param(level):
+def get_log_verbosity(level):
     level = level.lower()
     verbosity = LEVELS.get(level)
     if verbosity is None:

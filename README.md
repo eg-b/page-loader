@@ -11,9 +11,12 @@ positional arguments:
   url            web address
 
 optional arguments:
-  -h, --help     show this help message and exit
-  --output= DIR  set download directory
-  --log= LEVEL   set the logging level: debug, warning, info
+  -h, --help        show this help message and exit
+  -f, --force       rewrite files if they already exist
+  --output= DIR     set download directory
+  --log= LEVEL      logging level: debug, warning, info, error
+  --file= LOG_FILE  log file name
+
 ```
 Example:
 ```sh
