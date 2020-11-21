@@ -32,12 +32,3 @@ def setup(level, log_file):
     logging.basicConfig(level=level,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         handlers=handlers)
-
-
-def get_log_verbosity(level):
-    level = level.lower()
-    verbosity = LEVELS.get(level)
-    if verbosity is None:
-        raise app.KnownError('incorrect logging level,'
-                             ' try these: debug, info, error, warning')
-    return verbosity

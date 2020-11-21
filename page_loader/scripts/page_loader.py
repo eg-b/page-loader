@@ -8,11 +8,7 @@ from page_loader import cli
 
 
 def main():
-    try:
-        args = cli.parser.parse_args()
-    except KnownError as e:
-        logging.error(e)
-        sys.exit(1)
+    args = cli.parser.parse_args()
     logging_.setup(level=args.level, log_file=args.file)
     logging.info('started')
     try:
