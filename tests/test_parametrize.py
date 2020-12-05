@@ -1,19 +1,26 @@
-from page_loader import app
 import os
 
+from page_loader import app
 
 max_len = os.pathconf('/', 'PC_NAME_MAX')
 
-max_len_link = 'http://test/script'.ljust(max_len + 7, '0') + '.ext'
-max_len_expected_name = 'test-script'.ljust(max_len - 4, '0') + '.ext'
-
 
 NAMES = [
-    ('http://test.io/courses', app.PAGE, 'test-io-courses.html'),
-    ('http://test.io/assets/test.css', app.PAGE_ELEMENT,
-     'test-io-assets-test.css'),
-    ('http://test.io', app.DIR, 'test-io_files'),
-    (max_len_link, app.PAGE_ELEMENT, max_len_expected_name)
+    ('http://test.io/courses', app.get_name, 'test-io-courses'),
+    ('http://test.io/courses', app.get_directory_name, 'test-io-courses_files'),
+    ('http://test.io/courses', app.get_page_name, 'test-io-courses.html')
+]
+
+PAGE_ELEMENTS_NAMES = [
+    ('http://test.io/courses', 'assets/pic.png', 'test-io-assets-pic.png'),
+    ('http://test.io', 'assets/pic.png', 'test-io-assets-pic.png'),
+    ('http://test.io', 'assets/pic', 'test-io-assets-pic')
+]
+
+IS_LOCAL_TEST_ITEMS = [
+    ("https://cdn2.test.io/assets/menu.css", 'test.io', False),
+    ("https://test.io/assets/menu.css", 'test.io', True),
+    ("assets/menu.css", 'test.io', True)
 ]
 
 
@@ -35,13 +42,6 @@ PAGE_ELEMENTS_WITH_CODES = [
     ('https://eg-b.github.io/python-project-lvl3/assets/professions'
      '/python.svg', 500),
     ('https://eg-b.github.io/python-project-lvl3/packs/js/runtime.js', 200)]
-
-
-URLS_AND_EXP_NAMES = [
-    ('https://eg-b.github.io/python-project-lvl3',
-     'eg-b-github-io-python-project-lvl3.html'),
-    ('eg-b.github.io/python-project-lvl3',
-     'eg-b-github-io-python-project-lvl3.html')]
 
 
 ERROR_CODES = ["400", "401", "403", "404", "500"]

@@ -1,9 +1,6 @@
 import logging
 import sys
 
-from page_loader import app
-
-
 ERROR = 'error'
 INFO = 'info'
 WARNING = 'warning'
@@ -19,16 +16,13 @@ LEVELS = {
 
 
 def setup(level, log_file):
-    handlers = []
     err_handler = logging.StreamHandler(stream=sys.stderr)
     err_handler.setLevel(logging.ERROR)
-    handlers.append(err_handler)
     if log_file:
         main_handler = logging.FileHandler(filename=log_file)
     else:
         main_handler = logging.StreamHandler(sys.stdout)
-    handlers.append(main_handler)
     logging.root.handlers = []
     logging.basicConfig(level=level,
                         format='%(asctime)s - %(levelname)s - %(message)s',
-                        handlers=handlers)
+                        handlers=[main_handler, err_handler])

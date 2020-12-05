@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-import sys
 import logging
+import sys
 
-from page_loader import logging as logging_
-from page_loader.app import KnownError, page_load
+import page_loader.logging
 from page_loader import cli
+from page_loader.app import KnownError, download_page
 
 
 def main():
     args = cli.parser.parse_args()
-    logging_.setup(level=args.level, log_file=args.file)
+    page_loader.logging.setup(level=args.level, log_file=args.file)
     logging.info('started')
     try:
-        page_load(url=args.url, dir_path=args.output, force=args.force)
+        download_page(url=args.url, output_directory=args.output,
+                      overwrite=args.force)
     except KnownError as e:
         logging.debug(e, exc_info=sys.exc_info())
         logging.error(e)

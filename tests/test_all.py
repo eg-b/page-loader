@@ -5,10 +5,9 @@ import tempfile
 import pytest
 import requests_mock
 
-from page_loader.app import KnownError, page_load
 from page_loader import app
+from page_loader.app import KnownError, download_page
 from tests import test_parametrize as params
-
 
 GH_URL = "https://eg-b.github.io/python-project-lvl3/"
 TEST_URL = "http://test.io/test"
@@ -27,35 +26,40 @@ def mock():
         yield m
 
 
-@pytest.mark.parametrize("item,type,exp_result",
+@pytest.mark.parametrize("item,func,exp_result",
                          params.NAMES,
-                         ids=["page name",
-                              "page item name",
-                              "files directory name",
-                              "over max len page item name"])
-def test_get_name(item, type, exp_result):
-    new_name = app.get_name(item, type)
+                         ids=["name",
+                              "directory name",
+                              "page name"])
+def test_get_name(item, func, exp_result):
+    new_name = func(item)
     assert new_name == exp_result, 'incorrect new name'
 
 
-def test_names_match_after_truncation(tmpdir_):
-    name = 'test-script'.ljust(params.max_len - 4, '0') + '.ext'
-    file = f"{tmpdir_}/{name}"
-    with open(file, 'w') as f:
-        f.close()
-    new_name = app.get_name(item=params.max_len_link,
-                            type=app.PAGE_ELEMENT,
-                            dir=tmpdir_)
-    new_name, ext = os.path.splitext(new_name)
-    assert new_name != name, "names must not match"
-    assert new_name.endswith('_1'), "incorrect new name"
+@pytest.mark.parametrize("url,item,exp_result", params.PAGE_ELEMENTS_NAMES,
+                         ids=['url with path',
+                              'resourse with ext',
+                              'resourse with no ext'])
+def test_get_page_element_name(url, item, exp_result):
+    new_name = app.get_page_element_name(item, url)
+    assert new_name == exp_result, 'incorrect new name'
+
+
+@pytest.mark.parametrize("item,domain,exp_result",
+                         params.IS_LOCAL_TEST_ITEMS,
+                         ids=['not local',
+                              'local, full url',
+                              'local, path only'])
+def test_is_local(item, domain, exp_result):
+    assert app.is_local(item=item, domain=domain) is exp_result
+
 
 
 def test_prepare_page_elements(tmpdir_):
-    html = os.path.abspath("docs/index.html")
+    html = os.path.abspath("../docs/index.html")
     with open(html, 'r') as file:
         page, items = app.prepare_resources(
-            source=file, domain="eg-b.github.io",
+            source=file, url=GH_URL,
             files_path=tmpdir_)
         assert items == params.PAGE_ELEMENTS,\
             "unexpected page elements"
@@ -80,6 +84,13 @@ def test_write_file(tmpdir_):
     assert page in os.listdir(tmpdir_)
 
 
+def test_write_file_over_max_len_name(tmpdir_):
+    name = 'page.html'.ljust(params.max_len + 1, '0')
+    with pytest.raises(OSError):
+        with open(f"{tmpdir_}/{name}", 'w') as pg:
+            pg.write("test")
+
+
 def test_no_permission_dir(tmpdir_):
     subprocess.call(['chmod', '0444', tmpdir_])
     with pytest.raises(KnownError):
@@ -90,21 +101,10 @@ def test_page_load(tmpdir_, mock):
     URL = 'http://test.io/test'
     mock.get(URL, text='data', headers={'Content-Type': 'text'})
     files_dir = "test-io-test_files"
-    page_load(URL, dir_path=tmpdir_, force=True)
+    download_page(URL, output_directory=tmpdir_, overwrite=True)
     tmpdir_files = os.listdir(tmpdir_)
     assert 'test-io-test.html' in tmpdir_files, "unexpected name"
     assert files_dir in tmpdir_files, "there is no _files directory"
-
-
-@pytest.mark.parametrize('url,exp_name',
-                         params.URLS_AND_EXP_NAMES,
-                         ids=['scheme + hostname + path',
-                              'hostname + path'])
-def test_different_ways_written_url(tmpdir_, url, exp_name):
-    page_load(url, tmpdir_)
-    dir_files = os.listdir(tmpdir_)
-    assert dir_files != [], "there is no page"
-    assert exp_name in dir_files, "unexpected name"
 
 
 def test_item_load_fail(mock, tmpdir_):
@@ -112,7 +112,7 @@ def test_item_load_fail(mock, tmpdir_):
         link, status_code = item
         mock.get(link, text='data', headers={'Content-Type': 'text'},
                  status_code=status_code)
-    app.page_load(GH_URL, dir_path=tmpdir_, force=True)
+    app.download_page(GH_URL, output_directory=tmpdir_, overwrite=True)
     dir = os.listdir(tmpdir_)
     print(dir)
     exp_name = "eg-b-github-io-python-project-lvl3"

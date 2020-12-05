@@ -1,145 +1,167 @@
 import logging
 import os
+import shutil
 import string
-from progress.bar import Bar
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup
+from progress.bar import Bar
 
 
 PAGE = 'page'
 PAGE_ELEMENT = 'page_item'
 DIR = 'dir'
+LINK = 'link'
+SCRIPT = 'script'
+IMG = 'img'
 
 
 class KnownError(Exception):
     pass
 
 
-def setup_bar(max):
-    logging.debug(f"setup bar with max value: {max}")
-    return Bar('Processing ', max=max, suffix='%(percent)d%%')
+def download_page(url, output_directory=None, overwrite=False):
+    logging.debug(f'\ndownload_page(\n'
+                  f'url={url}\n'
+                  f'dir_path={output_directory}\n'
+                  f'overwrite={overwrite}')
+    if output_directory is None:
+        output_directory = os.getcwd()
+    output_directory = output_directory.rstrip('/')
+    page_file = get_page_name(url)
+    page_file = f"{output_directory}/{page_file}"
+    files_dir = get_directory_name(url)
+    files_dir = f"{output_directory}/{files_dir}"
+    create_files_directory(dir_name=files_dir, overwrite=overwrite)
+    page_items = download_single_page(url=url,
+                                      page_name=page_file,
+                                      files_dir=files_dir)
+    max_bar = 1 if len(page_items) == 0 else len(page_items)
+    with Bar('Processing ', max=max_bar, suffix='%(percent)d%%') as bar:
+        logging.info(f"downloading page elements from {url}")
+        for link, new_name in page_items:
+            bar.next()
+            try:
+                content = download_content(link)
+            except KnownError as e:
+                logging.warning(f"Can't load item {link}. {e}")
+                continue
+            item_path = f"{files_dir}/{new_name}"
+            write_to_file(file_path=item_path, source=content)
+        bar.next()
 
 
-def page_load(url, dir_path=None, force=False):
-    logging.debug(f'page_load function get arguments: '
-                  f'url - {url}, dir_path - {dir_path}, '
-                  f'force - {force}')
-    if dir_path is None:
-        logging.warning("No path specified, "
-                        "the current directory will be used")
-        dir_path = os.getcwd()
-    dir_path = dir_path.rstrip('/')
-    url_parts = urlparse(url, scheme='https')
-    scheme = f"{url_parts.scheme}://"
-    domain = url_parts.netloc
-    url = f"{scheme}{url_parts.netloc}{url_parts.path}"
+def download_single_page(url, page_name, files_dir):
     logging.info(f"downloading page {url}")
     original_page = download_content(url)
-    page_file = get_name(url, type=PAGE)
-    page_file = f"{dir_path}/{page_file}"
-    files_dir = get_name(url, type=DIR)
-    files_dir = f"{dir_path}/{files_dir}"
-    if not os.path.exists(files_dir):
-        logging.info(f"creating directory {files_dir}")
-        try:
-            os.makedirs(files_dir)
-        except PermissionError as e:
-            raise KnownError("You don't have enough privileges. "
-                             "Check permissions or try another one.") from e
-        except OSError as e:
-            raise KnownError(e) from e
-    else:
-        if force:
-            logging.warning(f"Directory {files_dir} already exists, "
-                            f"files will be overwritten")
-        else:
-            raise KnownError(f"Directory {files_dir} already exists, "
-                             f"clear the old one or try to use '-f' option")
     new_page, page_items = prepare_resources(source=original_page,
-                                             domain=domain,
+                                             url=url,
                                              files_path=files_dir)
-    write_to_file(file_path=page_file, source=new_page)
-    max_bar = 1 if len(page_items) == 0 else len(page_items)
-    bar = setup_bar(max=max_bar)
-    logging.info(f"downloading page elements from {url}")
-    for item in page_items:
-        link, new_name = item
-        try:
-            content = download_content(link)
-        except KnownError as e:
-            logging.warning(f"Can't load item {link}. {e}")
-            continue
-        item_path = f"{files_dir}/{new_name}"
-        write_to_file(file_path=item_path, source=content)
-        bar.next()
-    bar.next()
-    bar.finish()
+    write_to_file(file_path=page_name, source=new_page)
+    return page_items
 
 
-def prepare_resources(source, domain, files_path):
-    logging.debug(f'prepare_resources function got arguments: '
-                  f'domain - {domain}, '
-                  f'files_path - {files_path}')
+def create_files_directory(dir_name, overwrite):
+    if os.path.exists(dir_name):
+        if overwrite:
+            logging.warning(f"Directory {dir_name} already exists, "
+                            f"files will be overwritten")
+            shutil.rmtree(dir_name)
+        else:
+            raise KnownError(f"Directory {dir_name} already exists, "
+                             f"clear the old one or try to use '-f' option")
+    logging.info(f"creating directory {dir_name}")
+    try:
+        os.makedirs(dir_name)
+    except PermissionError as e:
+        raise KnownError("You don't have enough privileges. "
+                         "Check permissions or try another one.") from e
+    except OSError as e:
+        raise KnownError(e) from e
+
+
+def prepare_resources(source, url, files_path):
+    logging.debug(f'\nprepare_resources(\n'
+                  f'url={url}\n'
+                  f'files_path={files_path}')
+    url_parts = urlparse(url, scheme='https')
     soup = BeautifulSoup(source, 'html.parser')
-    items = soup.find_all(['link', 'script', 'img'])
+    items = soup.find_all([LINK, SCRIPT, IMG])
     page_items = []
     for item in items:
-        href = item.get('href')
-        src = item.get('src')
-        resource = src if src else href
-        if resource:
-            if domain not in resource and '//' not in resource:
-                domain = domain.rstrip('/')
-                resource = resource.lstrip('/')
-                link = f'https://{domain}/{resource}'
-                file_name = get_name(item=link, type=PAGE_ELEMENT)
-                element = (link, file_name)
-                page_items.append(element)
-                item['src'] = f"{files_path}/{file_name}"
+        if item.name in [SCRIPT, IMG]:
+            resource = item.get('src')
+        elif item.name == LINK:
+            resource = item.get('href')
+        if resource and is_local(item=resource, domain=url_parts.netloc):
+            resource = resource.lstrip('/')
+            file_name = get_page_element_name(
+                item=resource, url=url)
+            link = urlunparse((url_parts.scheme, url_parts.netloc,
+                               f"/{resource}", "", "", ""))
+            element = (link, file_name)
+            page_items.append(element)
+            item['src'] = f"{files_path}/{file_name}"
     logging.debug(f"return elements: {page_items}")
     page = soup.prettify(soup.original_encoding)
     return page, page_items
 
 
-def get_name(item, type, dir=None):
-    logging.debug(f'get_name function got arguments: '
-                  f'item - {item}, type - {type}, '
-                  f'dir - {dir}')
-    if type == PAGE_ELEMENT:
-        file, ext = os.path.splitext(item)
-        if len(ext) > 5:
-            file = f"{file}{ext}"
-            ext = ""
-        schema, url = file.split('//')
+def is_local(item, domain):
+    item_parts = urlparse(item)
+    item_domain = item_parts.netloc
+    if item_domain:
+        if item_domain == domain:
+            return True
+        else:
+            return False
+    if item_parts.path:
+        return True
     else:
-        schema, url = item.split('//')
-    url = url.rstrip('/')
-    new_name = ''.join(['-' if i in string.punctuation else i for i in url])
-    if type == DIR:
-        result = f"{new_name}_files"
-    elif type == PAGE:
-        result = f"{new_name}.html"
-    elif type == PAGE_ELEMENT:
-        max_len = os.pathconf('/', 'PC_NAME_MAX')
-        if len(f'{new_name}{ext}') > max_len:
-            logging.debug(f"max path length is {max_len}")
-            logging.warning("file name is too long, "
-                            "it will be shortened due to OS restrictions")
-            new_name = f'{new_name[:max_len - len(ext)]}'
-        name_with_ext = f"{new_name}{ext}"
-        files_dir = os.listdir(dir)
-        if name_with_ext in files_dir:
-            while name_with_ext in files_dir:
-                counter = 1
-                mark = f"_{counter}"
-                new_name = f'{new_name[:max_len - (len(ext) + len(mark))]}'
-                name_with_ext = f"{new_name}{mark}{ext}"
-                counter += 1
-        result = name_with_ext
-    logging.debug(f"return new name {result}")
-    return result
+        False
+
+
+def get_directory_name(item):
+    logging.debug(f'\nget_directory_name(\n'
+                  f'item={item}')
+    name = get_name(item)
+    return f"{name}_files"
+
+
+def get_page_name(item):
+    logging.debug(f'\nget_page_name(\n'
+                  f'item={item}')
+    name = get_name(item)
+    return f"{name}.html"
+
+
+def get_page_element_name(item, url):
+    logging.debug(f'\nget_page_element_name(\n'
+                  f'item={item}')
+    url_parts = urlparse(url)
+    if url_parts.path:
+        url, _ = url.split(url_parts.path)
+    item = f"{url}/{item}"
+    file, ext = os.path.splitext(item)
+    if len(ext) > 5:
+        name = get_name(item)
+        ext = ""
+    else:
+        name = get_name(file)
+    return f"{name}{ext}"
+
+
+def get_name(item):
+    logging.debug(f'\nget_name(\n'
+                  f'item={item}')
+    url_parts = urlparse(item)
+    if url_parts.scheme:
+        _, item = item.split(f"{url_parts.scheme}://")
+    item = item.rstrip('/')
+    name = ''.join(['-' if i in string.punctuation else i for i in item])
+    logging.debug(f"return new name {name}")
+    return name
 
 
 def download_content(url):
@@ -154,9 +176,9 @@ def download_content(url):
                          "Check your network connection "
                          "or contact your administrator.") from e
     except requests.exceptions.RequestException as e:
-        raise KnownError(f"Request error while trying "
-                         f"to download {url}. "
-                         f"Check if the request is correct.") from e
+        raise KnownError(
+            f"Request error while trying to download {url}. "
+            "Check if the request is correct.") from e
     logging.debug("successfully loaded")
     if 'text' in res.headers['Content-Type']:
         return res.text
