@@ -56,7 +56,7 @@ def test_is_local(item, domain, exp_result):
 
 
 def test_prepare_page_elements(tmpdir_):
-    html = os.path.abspath("../docs/index.html")
+    html = os.path.abspath("docs/index.html")
     with open(html, 'r') as file:
         page, items = app.prepare_resources(
             source=file, url=GH_URL,
